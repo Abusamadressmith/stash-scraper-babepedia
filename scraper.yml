@@ -165,4 +165,5 @@ xPathScrapers:
               regex: _thumb\d+
               with: ""
 
-      Details: //p[@id="biotext"]
+      Details:
+        selector: //p[@id="biotext"]
