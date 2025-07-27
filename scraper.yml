@@ -1,0 +1,168 @@
+name: Babepedia
+
+performerByName:
+  action: scrapeXPath
+  queryURL: https://www.babepedia.com/search/{}
+  scraper: performerSearch
+
+performerByURL:
+  action: scrapeXPath
+  url: https://www.babepedia.com
+  scraper: performerScraper
+
+xPathScrapers:
+  performerSearch:
+    performer:
+      Name:
+        selector: //span[@class="results"]//a[contains(@href, '/babe/')] | //h1[@id="babename"]
+        postProcess:
+          - replace:
+              regex: "aka(\\s+[A-Z]+)"
+              with: " aka $1"
+
+      URL:
+        selector: //span[@class="results"]//a[contains(@href, '/babe/')]/@href | //meta[@property='og:url']/@content
+        postProcess:
+          - replace:
+              regex: ^(?!http)
+              with: https://www.babepedia.com
+          - replace:
+              regex: https:\/\/www\.babepedia\.comhttps:\/\/www\.babepedia\.com
+              with: https://www.babepedia.com
+
+  performerScraper:
+    common:
+      $infoblock: //div[@id="personal-info-block"]
+
+    performer:
+      Name: //h1[@id="babename"]
+      Gender:
+        fixed: "Female"
+
+      URL:
+        selector: //head/meta[@property="og:url"]/@content | //div[@id='socialicons']/a/@href
+        postProcess:
+          - replace:
+              regex: 'https?://(?:www\.)?babepedia\.com/onlyfans/'
+              with: "https://onlyfans.com/"
+
+      Birthdate:
+        selector: $infoblock//span[@class="label" and text()='Born:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: \w+\s+(\d+)(?:st|nd|rd|th)?\s+(\w+)\s+(\d+)
+              with: $1 $2 $3
+          - parseDate: 2 January 2006
+
+      DeathDate:
+        selector: $infoblock//span[@class="label" and text()='Died:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: \w+\s+(\d+)(?:st|nd|rd|th)?\s+(\w+)\s+(\d+).*
+              with: $1 $2 $3
+          - parseDate: 2 January 2006
+
+      Ethnicity:
+        selector: $infoblock//span[@class="label" and text()='Ethnicity:']/following-sibling::span
+        postProcess:
+          - map:
+              asian: Asian
+              white: Caucasian
+              black: Black
+              hispanic: Latin
+
+      Country:
+        selector: $infoblock//span[@class="label" and text()='Nationality:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: \(|\)
+              with: ""
+
+      EyeColor: $infoblock//span[@class="label" and text()='Eye color:']/following-sibling::span
+
+      HairColor:
+        selector: $infoblock//span[@class="label" and text()='Hair color:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: "Brown Hair|Brown"
+              with: Brunette
+          - replace:
+              regex: "Fair"
+              with: Blonde
+
+      Height:
+        selector: $infoblock//span[@class="label" and text()='Height:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: ^.*\s(\d+)\scm.*$
+              with: $1
+
+      Weight:
+        selector: $infoblock//span[@class="label" and text()='Weight:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: ^.*\s(\d+)\skg.*$
+              with: $1
+
+      Measurements:
+        selector: $infoblock//span[@class="label" and text()='Measurements:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: (\d*)[a-zA-Z-]*(\d*-\d*)(.+?)([a-zA-Z]+)(.*)
+              with: $1$4-$2
+
+      FakeTits:
+        selector: $infoblock//span[@class="label" and text()='Boobs:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: Augmented
+              with: Fake
+          - replace:
+              regex: Real
+              with: Natural
+          - replace:
+              regex: \/.*$
+              with: ""
+
+      CareerLength:
+        selector: $infoblock//span[@class="label" and text()='Years active:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: \s+\(.*$
+              with: ""
+
+      Aliases:
+        selector: //span[@class="aliasname"]
+        concat: ", "
+
+      Tattoos:
+        selector: $infoblock//span[@class="label" and text()='Tattoos:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: (?i)\byes\b
+              with: Various
+          - replace:
+              regex: (?i)\bno\b
+              with: None
+
+      Piercings:
+        selector: $infoblock//span[@class="label" and text()='Piercings:']/following-sibling::span
+        postProcess:
+          - replace:
+              regex: (?i)\byes\b
+              with: Various
+          - replace:
+              regex: (?i)\bno\b
+              with: None
+          - replace:
+              regex: (?i)(?:both|each)\snipples?
+              with: Nipples
+
+      Image:
+        selector: //meta[@property="og:image"]/@content
+        postProcess:
+          - replace:
+              regex: _thumb\d+
+              with: ""
+
+      Details: //p[@id="biotext"]
